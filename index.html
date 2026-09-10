@@ -2,36 +2,48 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="theme-color" content="#000000">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Aetheron 黑白桌面 · AEphone</title>
-<style>html,body{margin:0;height:100%;background:#000}</style>
+<style>
+html,body{margin:0;height:100%;background:#000;color:#8a8a93;
+  font:13px/1.6 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+.box{position:absolute;left:0;right:0;top:44%;text-align:center}
+a{color:#c9c9d1}
+</style>
 <script>
-/* 固定入口：链接永不改变；每次打开都去取最新版本号，再进入对应版本目录。
-   version.json 用 cache-buster + no-store 拉取，保证不吃 CDN 缓存。 */
+/* 固定入口：链接永不改变；每次打开都现取最新版本号，再进入对应版本目录。
+   version.json 用 cache-buster + no-store 拉取，保证绝不吃到 CDN/浏览器旧缓存。 */
 (function () {
-  var FALLBACK = "20260910-114848";
+  var FALLBACK = "20260910-150335";
+  function show(t) { try { document.getElementById('t').innerHTML = t; } catch (e) {} }
   function go(build) {
-    try { location.replace('./v/' + build + '/'); }
-    catch (e) { location.href = './v/' + build + '/'; }
+    document.title = 'AEphone ' + build;
+    show('正在进入最新版本 ' + build + ' …');
+    var u = './v/' + build + '/';
+    setTimeout(function () {
+      try { location.replace(u); } catch (e) { location.href = u; }
+    }, 0);
+  }
+  function pick(xhrText) {
+    try { var j = JSON.parse(xhrText); return (j && j.build) || FALLBACK; } catch (e) { return FALLBACK; }
   }
   try {
     if (window.fetch) {
       fetch('version.json?t=' + Date.now(), { cache: 'no-store' })
         .then(function (r) { return r.ok ? r.json() : null; })
         .then(function (j) { go((j && j.build) || FALLBACK); })
-        .catch(function () { go(FALLBACK); });
+        ['catch'](function () { show('取版本号失败，进入兜底版本…'); go(FALLBACK); });
     } else {
       var x = new XMLHttpRequest();
       x.open('GET', 'version.json?t=' + Date.now(), true);
-      x.onload = function () {
-        var b = FALLBACK;
-        try { b = JSON.parse(x.responseText).build || FALLBACK; } catch (e) {}
-        go(b);
-      };
+      x.onload = function () { go(pick(x.responseText)); };
       x.onerror = function () { go(FALLBACK); };
       x.send(null);
     }
@@ -39,5 +51,5 @@
 })();
 </script>
 </head>
-<body></body>
+<body><div class="box" id="t">正在检查最新版本…</div></body>
 </html>
