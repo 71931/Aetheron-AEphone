@@ -32,9 +32,25 @@
         (document.body || document.documentElement).appendChild(el);
       }
       el.textContent = msg;
+      /* 点一下就收起，别一直糊在屏幕顶上 */
+      if (!el.__aeBound) {
+        el.__aeBound = 1;
+        el.addEventListener('click', function () { try { el.style.display = 'none'; } catch (e) {} });
+      }
     } catch (e) {}
   }
   window.__aeErrBar = bar;
+  window.__aeAnonErrs = 0;
+  window.__aeAnonLast = '';
+
+  function isForeign(url) {
+    try {
+      if (!url) return false;
+      if (url.indexOf('blob:') === 0 || url.indexOf('data:') === 0) return false;
+      if (url.indexOf('http') === 0) return url.indexOf(location.origin) !== 0;
+      return false;
+    } catch (e) { return false; }
+  }
 
   window.addEventListener('error', function (e) {
     var t = e.target;
@@ -42,9 +58,19 @@
       bar('资源加载失败：' + (t.src || t.href) + '\n（页面可能不完整，点击会无反应，请下拉刷新重试）');
       return;
     }
-    bar('脚本报错：' + (e.message || '未知错误') +
+    var msg = e.message || '';
+    /* 浏览器会把「跨域脚本」的报错脱敏成固定的 Script error.，位置一律 ？第0行。
+       本页所有 js 都是同源，出现这种匿名报错时，几乎都是手机浏览器/宿主 App 自己注入的脚本在报错，
+       与页面代码无关 —— 只记账、不弹红条，免得吓人；真出问题由下面的启动体检兜底。 */
+    if (!msg || /^script\s*error\.?$/i.test(msg) || isForeign(e.filename)) {
+      window.__aeAnonErrs = (window.__aeAnonErrs || 0) + 1;
+      window.__aeAnonLast = msg + ' @ ' + String(e.filename || '?');
+      try { if (window.console && console.warn) console.warn('[MarvisLog] 忽略外部脚本报错：' + window.__aeAnonLast); } catch (x) {}
+      return;
+    }
+    bar('脚本报错：' + msg +
         '\n位置：' + String(e.filename || '?').split('/').pop() + ' 第 ' + (e.lineno || 0) + ' 行' +
-        '\nbuild=' + BUILD + '（可长按复制本行反馈）');
+        '\nbuild=' + BUILD + '（可长按复制本行反馈，点红条可收起）');
   }, true);
 
   window.addEventListener('unhandledrejection', function (e) {
@@ -60,6 +86,7 @@
         'build=' + BUILD +
         ' | fetch=' + (typeof window.fetch) + ' find=' + (typeof Array.prototype.find) +
         ' Promise=' + (typeof window.Promise) + ' XHR=' + (typeof window.XMLHttpRequest) +
+        ' 外部脚本报错x' + (window.__aeAnonErrs || 0) +
         '\nUA=' + navigator.userAgent);
   }
   /* 版本自检：旧书签/旧缓存进来也能自动走到最新版 */
