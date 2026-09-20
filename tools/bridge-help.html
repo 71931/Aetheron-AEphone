@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>小红书通道 · 三步接上</title>
+<style>
+:root{color-scheme:dark light}
+*{box-sizing:border-box}
+body{margin:0;padding:18px 16px 40px;background:#0f1115;color:#e8eaed;font:15px/1.75 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",system-ui,sans-serif}
+h1{font-size:19px;margin:0 0 4px}
+.sub{color:#9aa0a6;font-size:12.5px;margin-bottom:16px}
+.card{background:#171a21;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px 14px 6px;margin-bottom:14px}
+.card h2{font-size:15px;margin:0 0 8px}
+.card p,.card li{font-size:13.5px;color:#d5d8dd;margin:6px 0}
+.warn{background:rgba(255,159,10,.12);border:1px solid rgba(255,159,10,.32);color:#ffbe5c;border-radius:12px;padding:11px 13px;font-size:13px;line-height:1.75;margin-bottom:14px}
+.ok{color:#3ecf7a;font-weight:700}
+code{background:rgba(255,255,255,.08);border-radius:6px;padding:2px 6px;font-size:12.5px;word-break:break-all}
+pre{background:#0b0d11;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px;overflow-x:auto;font-size:12.5px;line-height:1.7}
+a.btn{display:block;text-align:center;padding:12px 10px;margin:8px 0 2px;border-radius:10px;text-decoration:none;font-weight:700;font-size:14px}
+a.win{background:rgba(62,207,122,.18);color:#3ecf7a}
+a.mac{background:rgba(90,200,250,.16);color:#5ac8fa}
+.hint{color:#9aa0a6;font-size:12px;margin:6px 0 0}
+details{border-top:1px solid rgba(255,255,255,.08);padding:9px 0}
+details:first-of-type{border-top:0}
+summary{font-size:13.5px;color:#5ac8fa;cursor:pointer;outline:none}
+details p{margin:8px 0 2px;color:#c9ccd1;font-size:13px}
+.url{font-size:11.5px;color:#8b939c;word-break:break-all}
+</style></head>
+<body>
+<h1>小红书通道 · 三步接上</h1>
+<div class="sub">AEphone 站点用 · 照着念就行</div>
+
+<div class="warn"><b>先说清一件事：</b>这条通道必须跑在一台电脑上（Windows / Mac / Linux 都行），而且是<b>装了小红书 MCP、并且已经登录小红书</b>的那台电脑。手机单独接不了——手机在这事里只负责最后一格：填地址。</div>
+
+<div class="card">
+<h2>第 1 步 · 在电脑上把脚本下载下来</h2>
+<p>用那台电脑的浏览器打开下面任一链接（自动下载，是纯文本脚本，不是安装包，不用装任何东西）：</p>
+<a class="btn win" href="start-bridge-windows.bat" download>Windows：start-bridge-windows.bat</a>
+<a class="btn mac" href="xhs_bridge.py" download>Mac / Linux：xhs_bridge.py</a>
+<p class="hint">Mac 用户也可以顺手把 <a href="start-bridge-mac.command">start-bridge-mac.command</a> 一起存下来，放在同一文件夹。</p>
+<p class="url">下载地址（复制到电脑浏览器打开）：<br>
+https://71931.github.io/Aetheron-AEphone/tools/start-bridge-windows.bat<br>
+https://71931.github.io/Aetheron-AEphone/tools/xhs_bridge.py</p>
+</div>
+
+<div class="card">
+<h2>第 2 步 · 让通道跑起来</h2>
+<p><b>Windows：</b>存好的 <code>start-bridge-windows.bat</code> 直接双击。出现黑窗口别关，它就是个「转接头」。</p>
+<p><b>Mac / Linux：</b>把脚本存到桌面，打开「终端」，粘下面这一行回车（把路径换成实际位置）：</p>
+<pre>cd ~/Desktop &amp;&amp; python3 xhs_bridge.py --tunnel --mcp http://localhost:18061/mcp --token aetheron</pre>
+<p>两种跑法都会印出一行地址，长这样：<br><code>https://xxxx-xxxx.trycloudflare.com</code><br>这就是「通道地址」，<span class="ok">复制它</span>。</p>
+<p class="hint">第一次跑可能要等十几秒（在下载隧道小工具），耐心等一下。窗口关掉＝通道断开，下次要用就再双击一次。</p>
+</div>
+
+<div class="card">
+<h2>第 3 步 · 回手机上填一格</h2>
+<p>手机站点里进：设置 → MCP → 小红书 → 「通道地址（手机读小红书靠它）」。</p>
+<p>① 通道地址：粘上刚才那行 https 地址<br>② 令牌：<code>aetheron</code>（已经帮你填好了，别改）<br>③ 点「保存」→ 点「测连通」</p>
+<p>看到「<span class="ok">已连通：已登录：xxxx</span>」就成了。之后在聊天里给被授权的小红书 Char 发一条笔记链接，它就能真读到标题、正文和评论区；说一句「给我发条小红书」，它也会真搜真分享。</p>
+</div>
+
+<div class="card">
+<h2>常见报错对号入座</h2>
+<details><summary>没通：连不上通道（Failed to fetch）</summary><p>① 电脑上那个黑窗口是不是关了？关了就得重开。② 地址粘全了吗，末尾别多斜杠。③ 电脑和手机得能上网，隧道是走公网的，两边都不需要在同一 WiFi。</p></details>
+<details><summary>没通：令牌不对</summary><p>令牌填 <code>aetheron</code>（跟启动命令里的 <code>--token</code> 一致）。改过命令里的令牌，这里就得填改后的那个。</p></details>
+<details><summary>没通：通道地址不对（404）</summary><p>地址应当是 <code>https://xxx.trycloudflare.com</code> 这样的根地址，别自己加 <code>/call</code> 或 <code>/mcp</code> 后缀。</p></details>
+<details><summary>被浏览器拦了 / 提示混合内容</summary><p>站点是 https，通道也必须是 https。用上面带 <code>--tunnel</code> 的命令跑，拿到的就是 https 地址；只填 <code>http://192.168.x.x:18901</code> 会被浏览器挡掉。</p></details>
+<details><summary>测连通是通的，但聊天里说「通道还没接上」</summary><p>两种情况：① 这个 Char 没被授权——去「选择 Char 使用」里勾上它；② 那条链接是短链（xhslink.com），先让它在聊天里待一会儿，页面会自动把它展开再读，稍等或把长链接发过来。</p></details>
+<details><summary>Windows 双击一闪而过 / 提示没找到 python</summary><p>这台电脑没装 Python。去 python.org 装 Python 3，安装第一条记得勾 <b>Add python.exe to PATH</b>，装完再双击一次。</p></details>
+<details><summary>Mac 双击提示没有执行权限</summary><p>终端里跑一句 <code>chmod +x start-bridge-mac.command</code>（先把 <code>cd</code> 到文件所在文件夹），再双击。</p></details>
+</div>
+
+<div class="card">
+<h2>它到底在转什么</h2>
+<p>小红书 MCP 本身不让网页直接调用（跨域 + 需要登录态）。这个小脚本在电脑上开一个中转口，把网页的请求转给 MCP，再把结果带回来；带 <code>--tunnel</code> 时还会顺手开一条临时 https 通道，让手机上的站点能安全地访问到它。脚本只在本机跑，不往外传你的小红书登录信息。</p>
+</div>
+</body></html>
