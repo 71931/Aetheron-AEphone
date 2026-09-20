@@ -18,14 +18,18 @@
 接口：
     GET  /            状态页（浏览器直接看）
     GET  /status      通道 + 小红书登录状态
+    GET  /resolve?url=<短链>   展开 xhslink 短链 → 长链 + feed_id + xsec_token（v213）
     POST /call        {"tool": "get_feed_detail", "args": {...}}   转发任意 MCP 工具
 """
 import argparse
 import json
+import os
+import re
 import socket
 import sys
 import threading
 import time
+import urllib.parse
 import urllib.error
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -158,8 +162,96 @@ class McpClient(object):
         return "\n".join(parts)
 
 
+# ================= v213：手机复制来的短链，先展开再读 =================
+XHS_HOSTS = ("xiaohongshu.com", "xhslink.com")
+ID_RE = r"(?:explore|discovery/item|item)/([0-9a-zA-Z]{16,32})"
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """不让 urllib 自己闷头跳：每一跳都要先过域名白名单，防止被拿去当通用代理。"""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+def _host_ok(host):
+    h = str(host or "").split(":")[0].lower().strip()
+    if not h:
+        return False
+    extra = [x.strip().lower() for x in (os.environ.get("XHS_ALLOW_HOSTS") or "").split(",") if x.strip()]
+    return any(h == c or h.endswith("." + c) for c in list(XHS_HOSTS) + extra)
+
+
+def _pick(pattern, text):
+    m = re.search(pattern, text or "")
+    return m.group(1) if m else ""
+
+
+def resolve_short_link(url, max_hop=5, timeout=15):
+    """把短链（xhslink.com/a/xxx）跟到真实笔记地址，回长链 + feed_id + xsec_token。
+    只认小红书域名、最多 5 跳、只 GET —— 不拿它当通用跳板使。"""
+    out = {"ok": False, "url": "", "feed_id": "", "xsec_token": "", "hops": 0, "err": ""}
+    cur = str(url or "").strip()
+    if not cur:
+        out["err"] = "缺少 url"
+        return out
+    if not re.match(r"^https?://", cur, re.I):
+        cur = "https://" + cur
+    try:
+        for hop in range(max_hop + 1):
+            sp = urllib.parse.urlsplit(cur)
+            if sp.scheme not in ("http", "https") or not _host_ok(sp.hostname):
+                out["err"] = "只展开小红书域名下的链接"
+                return out
+            out["hops"] = hop
+            if re.search(ID_RE, cur):
+                break
+            req = urllib.request.Request(cur, method="GET", headers={
+                "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 "
+                              "(KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+                "Accept": "text/html,application/xhtml+xml",
+            })
+            location, body = "", ""
+            try:
+                with urllib.request.build_opener(_NoRedirect).open(req, timeout=timeout) as resp:
+                    body = resp.read(4096).decode("utf-8", "replace")
+                    location = resp.headers.get("Location") or ""
+            except urllib.error.HTTPError as e:
+                if e.code in (301, 302, 303, 307, 308):
+                    location = e.headers.get("Location") or ""
+                else:
+                    out["err"] = "短链返回 HTTP %s" % e.code
+                    return out
+            if location:
+                cur = urllib.parse.urljoin(cur, location)
+                continue
+            m = (re.search(r"""url\s*=\s*["']?([^"'>\s]+)""", body, re.I)
+                 or re.search(r"(https?://[^\"'>\s]*xiaohongshu\.com[^\"'>\s]*)", body, re.I))
+            if m:
+                cur = urllib.parse.unquote(m.group(1))
+                continue
+            out["url"] = cur
+            out["err"] = "这条短链没跟到笔记页（可能已失效或需要 App 打开）"
+            break
+        else:
+            out["err"] = "跳转太多（超过 %d 跳）" % max_hop
+            return out
+    except Exception as e:
+        out["err"] = "展开短链失败：%s" % e
+        return out
+    if not re.search(r"(?:explore|discovery/item|item)/", cur):
+        out["err"] = out["err"] or "这不是一条笔记链接"
+        return out
+    out["ok"] = True
+    out["url"] = cur
+    out["feed_id"] = _pick(ID_RE, cur)
+    out["xsec_token"] = urllib.parse.unquote(_pick(r"[?&]xsec_token=([^&#]+)", cur))
+    out["err"] = ""
+    return out
+
+
 class Handler(BaseHTTPRequestHandler):
-    server_version = "xhs-bridge/1.0"
+    server_version = "xhs-bridge/1.1"
     mcp = None          # type: McpClient
     token = ""
 
@@ -206,6 +298,14 @@ class Handler(BaseHTTPRequestHandler):
             self._json({"ok": False, "err": "令牌不对"}, 401)
             return
         path = self.path.split("?", 1)[0]
+        if path == "/resolve":
+            qs = self.path.split("?", 1)[1] if "?" in self.path else ""
+            target = (urllib.parse.parse_qs(qs).get("url") or [""])[0]
+            if not target:
+                self._json({"ok": False, "err": "缺少 url"}, 400)
+                return
+            self._json(resolve_short_link(target))
+            return
         if path in ("/status", "/"):
             st = self.mcp.call("check_login_status", {})
             if path == "/":
@@ -213,7 +313,8 @@ class Handler(BaseHTTPRequestHandler):
                         "<body style='font-family:system-ui;padding:24px;background:#111;color:#eee'>"
                         "<h3>小红书通道（xhs-bridge）</h3>"
                         "<p>MCP 地址：<code>%s</code></p><p>登录状态：%s</p>"
-                        "<p>接口：<code>POST /call</code> {\"tool\":\"get_feed_detail\",\"args\":{...}}</p></body>"
+                        "<p>接口：<code>POST /call</code> {\"tool\":\"get_feed_detail\",\"args\":{...}}</p>"
+                        "<p>短链展开：<code>GET /resolve?url=https://xhslink.com/a/xxxx</code></p></body>"
                         % (self.mcp.url, json.dumps(st, ensure_ascii=False)))
                 body = html.encode("utf-8")
                 self.send_response(200)

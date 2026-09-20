@@ -56,7 +56,8 @@ https://71931.github.io/Aetheron-AEphone/tools/xhs_bridge.py</p>
 <h2>第 3 步 · 回手机上填一格</h2>
 <p>手机站点里进：设置 → MCP → 小红书 → 「通道地址（手机读小红书靠它）」。</p>
 <p>① 通道地址：粘上刚才那行 https 地址<br>② 令牌：<code>aetheron</code>（已经帮你填好了，别改）<br>③ 点「保存」→ 点「测连通」</p>
-<p>看到「<span class="ok">已连通：已登录：xxxx</span>」就成了。之后在聊天里给被授权的小红书 Char 发一条笔记链接，它就能真读到标题、正文和评论区；说一句「给我发条小红书」，它也会真搜真分享。</p>
+<p>看到「<span class="ok">已连通：已登录：xxxx</span>」就成了。之后在聊天里给被授权的小红书 Char 发一条笔记链接（长链、手机分享复制的短链都行），它就能真读到标题、正文和评论区；说一句「给我发条小红书」，它也会真搜真分享。</p>
+<p class="hint">v213 起：短链（<code>xhslink.com/…</code>）也不用你自己转长链了——通道会先跟到真正的笔记地址，再带着 feed_id 一起读，卡片上会标「短链已展开」。</p>
 </div>
 
 <div class="card">
@@ -65,13 +66,15 @@ https://71931.github.io/Aetheron-AEphone/tools/xhs_bridge.py</p>
 <details><summary>没通：令牌不对</summary><p>令牌填 <code>aetheron</code>（跟启动命令里的 <code>--token</code> 一致）。改过命令里的令牌，这里就得填改后的那个。</p></details>
 <details><summary>没通：通道地址不对（404）</summary><p>地址应当是 <code>https://xxx.trycloudflare.com</code> 这样的根地址，别自己加 <code>/call</code> 或 <code>/mcp</code> 后缀。</p></details>
 <details><summary>被浏览器拦了 / 提示混合内容</summary><p>站点是 https，通道也必须是 https。用上面带 <code>--tunnel</code> 的命令跑，拿到的就是 https 地址；只填 <code>http://192.168.x.x:18901</code> 会被浏览器挡掉。</p></details>
-<details><summary>测连通是通的，但聊天里说「通道还没接上」</summary><p>两种情况：① 这个 Char 没被授权——去「选择 Char 使用」里勾上它；② 那条链接是短链（xhslink.com），先让它在聊天里待一会儿，页面会自动把它展开再读，稍等或把长链接发过来。</p></details>
+<details><summary>测连通是通的，但聊天里说「通道还没接上」</summary><p>先看这个 Char 是不是没被授权——去「选择 Char 使用」里勾上它。</p></details>
+<details><summary>短链（xhslink.com/…）提示「短链要通道帮忙展开」或读不到</summary><p>短链是手机 App 分享时复制的常见形态，本身不带笔记 id。v213 起由通道负责展开，读不到时对三处：① 桥脚本是不是旧版——重新下 <a href="xhs_bridge.py">xhs_bridge.py</a> 换掉旧的、重启通道；② 站点的「通道地址」是不是<strong>桥接地址</strong>（结尾带 <code>/mcp</code> 的直连地址展不开短链，换成不带 /mcp 的那个）；③ 这条短链本身跟不过去（已失效、或跳转太多次被桥主动拦下），桥会直接说明原因，不会硬猜。</p></details>
 <details><summary>Windows 双击一闪而过 / 提示没找到 python</summary><p>这台电脑没装 Python。去 python.org 装 Python 3，安装第一条记得勾 <b>Add python.exe to PATH</b>，装完再双击一次。</p></details>
 <details><summary>Mac 双击提示没有执行权限</summary><p>终端里跑一句 <code>chmod +x start-bridge-mac.command</code>（先把 <code>cd</code> 到文件所在文件夹），再双击。</p></details>
 </div>
 
 <div class="card">
 <h2>它到底在转什么</h2>
+<p>短链展开也在这台电脑上做：桥只认小红书域名、最多跟 5 跳、只 GET，不拿它当通用跳板使。</p>
 <p>小红书 MCP 本身不让网页直接调用（跨域 + 需要登录态）。这个小脚本在电脑上开一个中转口，把网页的请求转给 MCP，再把结果带回来；带 <code>--tunnel</code> 时还会顺手开一条临时 https 通道，让手机上的站点能安全地访问到它。脚本只在本机跑，不往外传你的小红书登录信息。</p>
 </div>
 </body></html>
