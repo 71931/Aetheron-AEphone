@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0b10">
+<title>角色名片 · Aetheron</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;min-height:100%;background:#0b0b10;color:#f2f2f7;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
+body{padding:20px 16px calc(28px + env(safe-area-inset-bottom))}
+.wrap{max-width:520px;margin:0 auto}
+.card{background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.03));border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:20px 18px;box-shadow:0 18px 46px rgba(0,0,0,.5)}
+.hd{display:flex;align-items:center;gap:14px}
+.ava{width:64px;height:64px;flex:none;border-radius:50%;overflow:hidden;background:linear-gradient(160deg,#3a3a55,#22222f);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#cfcfe6;box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
+.ava img{width:100%;height:100%;object-fit:cover;display:block}
+.nm{font-size:20px;font-weight:700;line-height:1.3}
+.sub{font-size:12px;opacity:.6;margin-top:4px}
+.badge{display:inline-block;margin-top:7px;padding:3px 9px;border-radius:999px;font-size:11px;border:1px solid rgba(90,200,250,.5);color:#8fe0ff;background:rgba(90,200,250,.12)}
+.badge.secret{border-color:rgba(255,159,10,.5);color:#ffcc80;background:rgba(255,159,10,.12)}
+.sec{margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08)}
+.sec-t{font-size:12px;letter-spacing:.06em;opacity:.55;margin-bottom:7px}
+.sec-c{font-size:14px;line-height:1.75;white-space:pre-wrap;word-break:break-word}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:2px}
+.chip{padding:5px 11px;border-radius:999px;font-size:12px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05)}
+.npc{display:flex;gap:9px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px}
+.npc:last-child{border-bottom:0}
+.npc i{font-style:normal;opacity:.55;font-size:11px}
+.lock{margin-top:16px;padding:14px;border-radius:14px;background:rgba(255,159,10,.1);border:1px solid rgba(255,159,10,.28);font-size:13px;line-height:1.7;color:#ffd9a0}
+.foot{margin-top:16px;text-align:center;display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.btn.ghost{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22);color:#f2f2f7}
+button.btn{font-family:inherit;cursor:pointer}
+.btn{display:inline-block;padding:12px 22px;border-radius:14px;background:linear-gradient(160deg,#5ac8fa,#0a84ff);color:#fff;text-decoration:none;font-size:14px;font-weight:600}
+.tip{margin-top:10px;font-size:11px;opacity:.45;line-height:1.6}
+.tags{margin-top:14px;font-size:11px;opacity:.4;text-align:center}
+button.btn:disabled{opacity:.75}
+.boot-mask{position:fixed;inset:0;z-index:99;background:rgba(11,11,16,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center}
+.boot-spin{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.18);border-top-color:#5ac8fa;animation:bootspin .9s linear infinite}
+@keyframes bootspin{to{transform:rotate(360deg)}}
+.boot-t{font-size:15px;font-weight:600}
+.boot-s{font-size:12px;opacity:.55;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap"><div class="card" id="card"><div class="sec-c" style="opacity:.6;font-size:13px">正在读取名片…</div></div>
+<div class="foot"><button class="btn" id="addToList" type="button">添加到我的聊天列表</button><a class="btn ghost" href="./index.html">打开 Aetheron—AEphone</a><div class="tip" id="footTip">点「添加到我的聊天列表」会自动打开 AEphone 并弹出确认卡；任何一台手机扫这个码都能加 TA —— 这是角色名片页，只显示 TA 允许公开的资料</div></div>
+<div class="tags" id="tags"></div></div>
+<script>
+function b64uDecode(str){
+  try{
+    var s=String(str||'').replace(/-/g,'+').replace(/_/g,'/');
+    while(s.length%4)s+='=';
+    return decodeURIComponent(escape(atob(s)));
+  }catch(e){return null;}
+}
+function b64uEncode(str){
+  try{
+    var s=btoa(unescape(encodeURIComponent(String(str==null?'':str))));
+    return s.replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  }catch(e){return '';}
+}
+/* v191：音色 ID → 中文名，名片上给人看的，不甩英文 ID */
+var VOICE_NAMES={'male-qn-qingse':'青涩男声','male-qn-jingying':'精英男声','male-qn-badao':'霸道男声','male-qn-daxuesheng':'大学生男声','female-shaonv':'少女音','female-yujie':'御姐音','female-chengshu':'成熟女声','female-tianmei':'甜美女声','presenter_male':'主持男声','presenter_female':'主持女声','audiobook_male_1':'有声书男声1','audiobook_male_2':'有声书男声2','audiobook_female_1':'有声书女声1','audiobook_female_2':'有声书女声2'};
+function voiceNameOf(vid){
+  var v=String(vid||'').trim();
+  if(!v)return '';
+  var jp=/-jingpin$/.test(v),base=v.replace(/-jingpin$/,'');
+  var hit=VOICE_NAMES[v]||VOICE_NAMES[base];
+  if(hit)return hit+(jp?'·精品':'');
+  if(/^[A-Za-z0-9_-]+$/.test(v)&&v.length>16)return '自定义音色';
+  return v;
+}
+var GENDER_NAMES={male:'男',female:'女',other:'其他',unknown:'保密'};
+function genderName(g){var v=String(g||'').trim();return GENDER_NAMES[v.toLowerCase()]||v;}
+function esc(s){return String(s==null?'':s);}
+/* 头像：data: / http(s) / dataURI 直接用；相对路径也放行，取不到就退回首字 */
+function avatarSrc(v){v=String(v||'').trim();if(!v)return '';if(/^data:image\//i.test(v)||/^https?:\/\//i.test(v)||/^\.{0,2}\//.test(v)||/^[A-Za-z0-9_-]+\.(png|jpe?g|webp|gif|svg)$/i.test(v))return v;return '';}
+function el(tag,cls,txt){var d=document.createElement(tag);if(cls)d.className=cls;if(txt!=null)d.textContent=txt;return d;}
+(function(){
+  var card=document.getElementById('card'),tags=document.getElementById('tags');
+  var hash=location.hash||'';
+  var mt=hash.match(/[#&]d=([^&]+)/);
+  card.innerHTML='';
+  if(!mt){card.appendChild(el('div','sec-c','这个二维码里没有名片信息。'));return;}
+  var raw=b64uDecode(mt[1]);
+  var d=null;
+  try{d=JSON.parse(raw);}catch(e){}
+  if(!d){card.appendChild(el('div','sec-c','名片信息读取失败，请让 TA 重新生成二维码。'));return;}
+  var addBtn=document.getElementById('addToList');
+  if(addBtn)addBtn.addEventListener('click',function(){
+    /* v191：localStorage + URL hash 双通道——别的手机没开过站点 / localStorage 被限制也能加 */
+    try{localStorage.setItem('aether_pending_friend',location.href);}catch(e){}
+    var enc='';
+    try{enc=b64uEncode(location.href);}catch(e){}
+    /* v192：给个「正在打开」的整屏提示，首次加载十几秒也不会像卡死 */
+    try{
+      addBtn.disabled=true;addBtn.textContent='正在打开 AEphone…';
+      var mask=document.createElement('div');
+      mask.className='boot-mask';
+      mask.innerHTML='<div class="boot-spin"></div><div class="boot-t">正在打开 AEphone…</div><div class="boot-s">首次打开可能要十几秒，请稍候，别关闭页面</div>';
+      document.body.appendChild(mask);
+    }catch(e){}
+    location.href='./index.html'+(enc?('#addfriend='+enc):'');
+  });
+  var ua=navigator.userAgent||'';
+  if(/MicroMessenger/i.test(ua)){
+    var ft=document.getElementById('footTip');
+    if(ft)ft.textContent='微信里若按钮没反应：点右上角「···」→「在浏览器打开」，再点「添加到我的聊天列表」。';
+  }
+  var secret=(d.p==='secret');
+  var hd=el('div','hd');
+  var av=el('div','ava');
+  var avSrc=secret?'':avatarSrc(d.av);
+  if(avSrc){
+    var img=document.createElement('img');img.src=avSrc;img.alt='';img.onerror=function(){av.textContent=esc(d.n||'?').slice(0,1);};
+    av.appendChild(img);
+  } else av.textContent=esc(d.n||'?').slice(0,1);
+  hd.appendChild(av);
+  var hb=el('div');
+  hb.appendChild(el('div','nm',esc(d.n||'未命名角色')));
+  hb.appendChild(el('div','sub',secret?'资料已设为私密':'角色名片 · 任何人扫码都能加 TA 为好友'));
+  var badge=el('span','badge'+(secret?' secret':''),secret?'仅私密':(d.p==='part'?'部分公开':'全部公开'));
+  hb.appendChild(badge);
+  hd.appendChild(hb);
+  card.appendChild(hd);
+  if(secret){
+    var lk=el('div','lock','TA 把资料设成私密啦，扫这个码只能看到名字。想了解 TA，就加好友去聊天里问吧。');
+    card.appendChild(lk);
+    return;
+  }
+  function sec(title,text){
+    if(!text)return;
+    var s=el('div','sec');
+    s.appendChild(el('div','sec-t',title));
+    s.appendChild(el('div','sec-c',esc(text)));
+    card.appendChild(s);
+  }
+  /* v191：按「身份 / 人设 / 语音 / 关系」分区，人设归人设、语音归语音 */
+  var chips=el('div','chips');
+  if(d.nn)chips.appendChild(el('span','chip','网名 · '+esc(d.nn)));
+  if(d.g)chips.appendChild(el('span','chip','性别 · '+esc(genderName(d.g))));
+  if(chips.children.length){
+    var sid=el('div','sec');
+    sid.appendChild(el('div','sec-t','身份'));
+    sid.appendChild(chips);
+    card.appendChild(sid);
+  }
+  var persona='';
+  if(d.bio)persona+=(persona?'\n':'')+'身世：'+esc(d.bio);
+  if(d.look)persona+=(persona?'\n':'')+'外貌：'+esc(d.look);
+  sec('人设',persona);
+  if(d.voice)sec('语音','音色：'+voiceNameOf(d.voice));
+  var rel='';
+  if(Array.isArray(d.alts)&&d.alts.length)rel+='小号：'+esc(d.alts.join(' · '));
+  if(Array.isArray(d.npc)&&d.npc.length){
+    var names=d.npc.map(function(x){return esc(x&&x.n||'?')+(x&&x.r?('（'+esc(x.r)+'）'):'');}).join(' · ');
+    rel+=(rel?'\n':'')+'NPC：'+names;
+  }
+  sec('关系',rel);
+  if(tags)tags.textContent=(d.ts?new Date(d.ts).toLocaleString('zh-CN'):'')+' · Aetheron—AEphone';
+})();
+</script>
+</body>
+</html>
