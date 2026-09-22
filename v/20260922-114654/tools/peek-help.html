@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>掌心窗接入说明 · 三步接上</title>
+<style>
+:root{--bg:#fdf7f9;--card:#fff;--line:rgba(0,0,0,.08);--t:#1c1c22;--dim:#8a8a95;--pink:#ff6f9c;--pinkbg:#ffeef4}
+*{box-sizing:border-box}
+body{margin:0;padding:18px 16px 56px;background:var(--bg);color:var(--t);
+  font:15px/1.75 -apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue","Microsoft YaHei",sans-serif;
+  -webkit-text-size-adjust:100%}
+h1{font-size:21px;margin:4px 0 6px}
+.sub{color:var(--dim);font-size:13px;margin-bottom:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 15px;margin:0 0 14px;
+  box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.card h2{font-size:15.5px;margin:0 0 8px;display:flex;align-items:center;gap:8px}
+.step-no{display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--pinkbg);color:var(--pink);
+  font-size:12.5px;font-weight:700;align-items:center;justify-content:center;flex:none}
+.card p{margin:0 0 8px}
+.card p:last-child{margin-bottom:0}
+.mono{display:block;background:#f6f6f8;border:1px solid var(--line);border-radius:9px;padding:9px 10px;margin:8px 0;
+  font:12.5px/1.6 ui-monospace,Menlo,Consolas,monospace;word-break:break-all;-webkit-user-select:all;user-select:all}
+a{color:#e0447a;word-break:break-all}
+.tip{background:var(--pinkbg);border:1px solid rgba(255,111,156,.25);border-radius:11px;padding:10px 12px;font-size:13.5px}
+.warn{background:#fff7e8;border:1px solid rgba(255,159,10,.35);border-radius:11px;padding:10px 12px;font-size:13.5px}
+code{background:#f2f2f5;border-radius:5px;padding:1px 5px;font-size:12.5px;word-break:break-all}
+ul{padding-left:20px;margin:6px 0}
+li{margin:4px 0}
+.hr{height:1px;background:var(--line);margin:14px 0}
+table{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:4px}
+td{padding:7px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+td:first-child{color:var(--dim);white-space:nowrap;padding-right:10px}
+.kv b{color:var(--pink)}
+</style>
+</head>
+<body>
+<h1>掌心窗 · 三步接上</h1>
+<div class="sub">掌心窗公开版 = 安卓 App + 云端后端 server + 云端 MCP 三件套。<br>手机那个 App 负责看和动手，云端的 MCP 负责把这些能力开给 AI。一次弄好，以后开机即用。</div>
+
+<div class="tip" style="margin-bottom:16px">
+一句话分工：<b>手机端填 server 的地址</b>，<b>AI（站点里那个通道地址）填 mcp 的地址</b>，两边的 Token 必须是同一个。
+</div>
+
+<div class="card">
+  <h2><span class="step-no">1</span>云端起服务（一次性，约 5 分钟）</h2>
+  <p>① 手机或电脑打开下面这个链接，用 GitHub 账号登录并授权，其余全默认，点部署：</p>
+  <span class="mono">https://render.com/deploy?repo=https://github.com/linzhi-524/linjian-peek-public</span>
+  <p>② 它会自动建两个服务：<code>zhangxinchuang-server</code>（手机连）和 <code>zhangxinchuang-mcp</code>（AI 连），并自动生成一个共享令牌 <code>LINJIAN_TOKEN</code>。</p>
+  <p>③ 部署完做两件事：</p>
+  <ul>
+    <li>打开 <code>mcp</code> 服务 → Environment，复制 <b>LINJIAN_TOKEN</b> 的值（后面要填两次）。</li>
+    <li>记下两个域名：server 的公网地址、mcp 的公网地址（形如 <code>https://xxxx.onrender.com</code>）。</li>
+  </ul>
+  <p class="tip">免费实例会休眠，第一次访问要等 30~60 秒冷启动，转圈别慌。</p>
+</div>
+
+<div class="card">
+  <h2><span class="step-no">2</span>手机装 App 并连上</h2>
+  <p>① 装公开版 APK：仓库 <b>Actions</b> → <b>Build Android Public APK</b> → 跑一次工作流，下载产物里的 APK 安装。</p>
+  <span class="mono">https://github.com/linzhi-524/linjian-peek-public/actions</span>
+  <p>② 打开 App → <b>设置页</b>填三样：</p>
+  <table>
+    <tr><td>服务器地址</td><td>server 的公网域名，<b>不要</b>结尾加斜杠</td></tr>
+    <tr><td>Token</td><td>第 1 步复制的那串 <code>LINJIAN_TOKEN</code></td></tr>
+    <tr><td>设备 ID</td><td><code>android-phone</code></td></tr>
+  </table>
+  <p style="margin-top:8px">③ 去系统里把权限开齐：<b>无障碍</b>（掌心窗服务）、<b>通知使用权</b>、<b>使用情况访问</b>；再把电池优化关掉、允许后台运行，回 App 点启动。</p>
+  <p class="warn">如果系统提示「受限设置 / 出于安全考虑不可用」：设置 → 应用 → 掌心窗 → 右上角菜单 → 允许受限设置，再回无障碍里打开「掌心窗服务」。</p>
+</div>
+
+<div class="card">
+  <h2><span class="step-no">3</span>回到站点填 MCP 地址</h2>
+  <p>站点 → <b>MCP</b> → <b>掌心窗</b> → 通道地址：</p>
+  <span class="mono">https://你的-mcp-域名/mcp</span>
+  <p>Token 填同一个 <code>LINJIAN_TOKEN</code> → 点「保存」→ 点「测连通」。看到 <code>ok=true</code> 和 <code>linjian_status</code> 的返回，就是通了。</p>
+  <p>然后点详情页顶部那一栏挑 Char：勾上的角色，聊天时就能看到并使用这台手机。</p>
+  <p class="tip">地址和 Token 只存在你这台手机的浏览器里（localStorage），不上传服务器、也不写进站点源码。</p>
+</div>
+
+<div class="card">
+  <h2>常见报错怎么对</h2>
+  <table>
+    <tr><td>连不上 / 超时</td><td>Render 冷启动，等 30~60 秒再点一次；或确认地址结尾是 <code>/mcp</code>。</td></tr>
+    <tr><td>令牌不对 401</td><td>站点、mcp 服务、手机 App 三处的 Token 必须是同一个 LINJIAN_TOKEN。</td></tr>
+    <tr><td>health 里 has_url=false</td><td>mcp 服务没拿到 server 地址：重新同步一次 Blueprint，或手动把 <code>LINJIAN_URL</code> 填成 server 公网地址后重新部署 mcp。</td></tr>
+    <tr><td>能连但读不到状态</td><td>手机端 App 被系统杀了 / 无障碍掉了。把 App 拉回前台，确认服务是启动状态。</td></tr>
+    <tr><td>浏览器直接拒绝</td><td>填的是 http 地址。站点是 https，浏览器不允许连 http（局域网自建除外）。云端部署天然是 https。</td></tr>
+    <tr><td>把 server 当成 mcp</td><td>server 只给手机用。AI 端必须填 mcp 服务的域名，且结尾加 <code>/mcp</code>。</td></tr>
+  </table>
+</div>
+
+<div class="card kv">
+  <h2>规矩（别嫌啰嗦）</h2>
+  <p><b>只连自己的手机、自己的服务。</b>截图、读屏、点击、输入、门禁、息屏都是敏感能力；Token 别发给陌生客户端，也别拿掌心窗去管别人的设备。</p>
+  <p>删日记、删日记本这类不可逆动作，MCP 要求显式确认才会执行。</p>
+  <div class="hr"></div>
+  <p class="sub" style="margin:0">掌心窗公开版 v0.3.8.8 · 仓库 linzhi-524/linjian-peek-public · 许可条款见仓库 LICENSE</p>
+</div>
+
+</body>
+</html>
